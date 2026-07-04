@@ -1,0 +1,33 @@
+{
+	"name": "sushi-gakusei",
+	"description": "Pattern memory game with sushi",
+	"authors": ["ItsZariep"],
+	"copyright": "Copyright © 2026",
+	"license": "GPL-3.0-only",
+	"targetType": "executable",
+	"dependencies": {
+		"raylib-d": "~>6.0.1"
+	},
+	"libs": [
+		"raylib"
+	],
+	"stringImportPaths": ["source"],
+	"configurations": [
+	{
+		"name": "default",
+		"targetType": "executable",
+		"targetName": "game",
+		"libs": ["raylib"],
+		"lflags-posix": ["-L."],
+		"lflags-osx": ["-rpath", "@executable_path/"],
+		"lflags-linux": ["-rpath=$$ORIGIN"],
+		"lflags-windows": ["/LIBPATH:windows", "/LIBPATH:."]
+	},
+		{
+			"name": "wasm",
+			"targetType": "staticLibrary",
+			"targetName": "game_wasm",
+			"dflags": ["-i", "-betterC", "-checkaction=halt"]
+		}
+	]
+}

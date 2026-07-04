@@ -1,0 +1,3 @@
+[submodule "sushi-gakusei/buildweb"]
+	path = sushi-gakusei/buildweb
+	url = https://github.com/Kapendev/raylib-d-template.git
