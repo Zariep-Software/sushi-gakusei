@@ -64,7 +64,11 @@ __gshared
 }
 
 private immutable float[4] ANIM_DURATIONS = [0.30f, 0.30f, 0.45f, 0.30f]; // cut, slice, salt, vinegar
-private enum SUSHI_Y = SCREEN_HEIGHT - 256;
+
+private float getSushiY() @nogc nothrow
+{
+	return cast(float)GetScreenHeight() - 256.0f;
+}
 
 private float lerp(float a, float b, float t) @nogc nothrow
 {
@@ -73,10 +77,13 @@ private float lerp(float a, float b, float t) @nogc nothrow
 
 private Rectangle[4] actionButtonRects() @nogc nothrow
 {
+	float sw = cast(float)GetScreenWidth();
+	float sh = cast(float)GetScreenHeight();
+
 	float w = 110, h = 110, gap = 24;
 	float totalW = w * 4 + gap * 3;
-	float x0 = (SCREEN_WIDTH - totalW) * 0.5f;
-	float y = SCREEN_HEIGHT - h - 24;
+	float x0 = (sw - totalW) * 0.5f;
+	float y = sh - h - 24;
 	Rectangle[4] r;
 	foreach (i; 0 .. 4)
 		r[i] = Rectangle(x0 + i * (w + gap), y, w, h);
@@ -113,7 +120,8 @@ private void startNewOrder() @nogc nothrow
 
 private void spawnSushi() @nogc nothrow
 {
-	sushiTargetX = SCREEN_WIDTH * 0.5f - 64;
+	float sw = cast(float)GetScreenWidth();
+	sushiTargetX = sw * 0.5f - 64;
 	sushiX = sushiTargetX - 300;
 	sushiAlpha = 0.0f;
 	sushiExiting = false;
@@ -124,7 +132,6 @@ private void exitSushi() @nogc nothrow
 	sushiExiting = true;
 }
 
-// Advances the state machine by dt. Call once per frame before drawing
 void gameUpdate(float dt) @nogc nothrow
 {
 	updateActionButtons(dt);
@@ -235,6 +242,14 @@ private void updateActionButtons(float dt) @nogc nothrow
 	Rectangle[4] rects = actionButtonRects();
 	bool instructionActive = phase == Phase.InstructionShow;
 
+	bool ignoreHover = false;
+	version(Android) { ignoreHover = true; }
+
+	if (GetTouchPointCount() > 0)
+	{
+		ignoreHover = true;
+	}
+
 	foreach (i; 0 .. 4)
 	{
 		Action a = cast(Action) i;
@@ -245,22 +260,22 @@ private void updateActionButtons(float dt) @nogc nothrow
 
 		if (isInstruction)
 		{
-			target = 1.2f; // instruction: highlight + grow
+			target = 1.2f;
 			buttonTint[i] = ACTIVE;
 		}
 		else if (buttonInteract[i].down)
 		{
-			target = 1.2f; // held click: highlight + grow until release
+			target = 1.2f;
 			buttonTint[i] = HOVER;
 		}
-		else if (buttonInteract[i].hovered)
+		else if (!ignoreHover && buttonInteract[i].hovered)
 		{
-			target = 1.0f; // hover only: highlight, no growth
+			target = 1.0f;
 			buttonTint[i] = HOVER;
 		}
 		else
 		{
-			target = 1.0f; // idle: dim, normal size
+			target = 1.0f;
 			buttonTint[i] = DIM;
 		}
 
@@ -301,7 +316,7 @@ private void handlePlayerInput() @nogc nothrow
 		}
 	}
 
-	if (IsKeyPressed(settings.keyFor(4)) || IsKeyPressed(KeyboardKey.KEY_ESCAPE)) // pause
+	if (IsKeyPressed(settings.keyFor(4)) || IsKeyPressed(KeyboardKey.KEY_ESCAPE))
 		pauseRequested = true;
 
 	if (!got) return;
@@ -361,10 +376,13 @@ private void failOrder() @nogc nothrow
 
 void gameDraw() @nogc nothrow
 {
-	// Keep Aspect Centered
-	ui.drawAspectCover(texBackground, Rectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT), Colors.WHITE);
+	float sw = cast(float)GetScreenWidth();
+	float sh = cast(float)GetScreenHeight();
+	float currentSushiY = getSushiY();
 
-	Rectangle workbenchRect = Rectangle(SCREEN_WIDTH * 0.5f - 726, SCREEN_HEIGHT - 400, 1450, 714);
+	ui.drawAspectCover(texBackground, Rectangle(0, 0, sw, sh), Colors.WHITE);
+
+	Rectangle workbenchRect = Rectangle(sw * 0.5f - 725, sh - 400, 1450, 714);
 	DrawTexturePro(texWorkbench,
 		Rectangle(0, 0, cast(float) texWorkbench.width, cast(float) texWorkbench.height),
 		workbenchRect, Vector2(0, 0), 0.0f, Colors.WHITE);
@@ -373,7 +391,7 @@ void gameDraw() @nogc nothrow
 	if (sushiAlpha > 0.001f)
 	{
 		Texture2D sushi = texSushi[sushiVariant];
-		Rectangle dst = Rectangle(sushiX, SUSHI_Y, 128, 128);
+		Rectangle dst = Rectangle(sushiX, currentSushiY, 128, 128);
 		DrawTexturePro(sushi, Rectangle(0, 0, cast(float) sushi.width, cast(float) sushi.height),
 			dst, Vector2(0, 0), 0.0f, Color(255, 255, 255, cast(ubyte)(sushiAlpha * 255)));
 	}
@@ -385,7 +403,7 @@ void gameDraw() @nogc nothrow
 		float progress = animT / animDuration;
 		if (progress > 1.0f) progress = 1.0f;
 
-		Vector2 sushiCenter = Vector2(sushiX + 96.0f, SUSHI_Y + 32.0f);
+		Vector2 sushiCenter = Vector2(sushiX + 96.0f, currentSushiY + 32.0f);
 		Vector2 offset = Vector2(0.0f, 0.0f);
 		float rotation = 0.0f;
 
@@ -425,7 +443,7 @@ void gameDraw() @nogc nothrow
 	drawHud();
 
 	if (redFlashAlpha > 0.001f)
-		DrawRectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, Color(255, 0, 0, cast(ubyte)(redFlashAlpha * 255)));
+		DrawRectangle(0, 0, cast(int)sw, cast(int)sh, Color(255, 0, 0, cast(ubyte)(redFlashAlpha * 255)));
 }
 
 private void drawActionButtons() @nogc nothrow
@@ -437,11 +455,12 @@ private void drawActionButtons() @nogc nothrow
 
 private void drawHud() @nogc nothrow
 {
+	float sw = cast(float)GetScreenWidth();
+
 	DrawTextEx(fontFredoka, TextFormat("Score: %d", score), Vector2(20, 20), 28, 1.0f, Colors.WHITE);
 	DrawTextEx(fontFredoka, TextFormat("Lives: %d", lives), Vector2(20, 54), 28, 1.0f, Colors.WHITE);
 
-	// Pause button
-	Rectangle pauseRect = Rectangle(SCREEN_WIDTH - 70, 8, 64, 64);
+	Rectangle pauseRect = Rectangle(sw - 70, 8, 64, 64);
 	if (ui.iconButton(pauseRect, texUiPause, false))
 	{
 		pauseRequested = true;

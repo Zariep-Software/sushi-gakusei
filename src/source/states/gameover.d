@@ -43,15 +43,25 @@ private const(char)* calculateGrade() @nogc nothrow
 	return "F";
 }
 
-enum GameOverAction : int { None, PlayAgain, Menu }
+enum GameOverAction : int
+{
+	None,
+	PlayAgain,
+	Menu
+}
 
 GameOverAction gameOverUpdateDraw() @nogc nothrow
 {
 	GameOverAction result = GameOverAction.None;
 
-	DrawRectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, Color(10, 10, 10, 230));
+	float sw = cast(float)GetScreenWidth();
+	float sh = cast(float)GetScreenHeight();
 
-	Rectangle panel = Rectangle(SCREEN_WIDTH * 0.5f - 210, SCREEN_HEIGHT * 0.5f - 170, 420, 340);
+	DrawRectangle(0, 0, cast(int)sw, cast(int)sh, Color(10, 10, 10, 230));
+
+	Rectangle panel = Rectangle(sw * 0.5f - 210, sh * 0.5f - 170,
+		420, 340);
+
 	DrawRectangleRounded(panel, 0.08f, 8, Color(30, 30, 30, 255));
 	DrawRectangleRoundedLines(panel, 0.08f, 8, Colors.WHITE);
 

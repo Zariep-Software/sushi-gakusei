@@ -15,7 +15,19 @@ bool button(Rectangle rect, const(char)* label, Font font, int fontSize = 28) @n
 {
 	Vector2 mouse = layoutMouse();
 	bool hovered = CheckCollisionPointRec(mouse, rect);
-	bool pressed = hovered && IsMouseButtonReleased(MouseButton.MOUSE_BUTTON_LEFT);
+
+	bool pressed = false;
+	version(Android)
+	{
+		if (hovered && IsGestureDetected(Gesture.GESTURE_TAP))
+		{
+			pressed = true;
+		}
+	}
+	else
+	{
+		pressed = hovered && IsMouseButtonReleased(MouseButton.MOUSE_BUTTON_LEFT);
+	}
 
 	Color bg = hovered ? Color(90, 90, 90, 255) : Color(60, 60, 60, 255);
 	DrawRectangleRounded(rect, 0.25f, 8, bg);

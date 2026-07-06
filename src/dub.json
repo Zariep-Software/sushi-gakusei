@@ -13,21 +13,33 @@
 	],
 	"stringImportPaths": ["source"],
 	"configurations": [
-	{
-		"name": "default",
-		"targetType": "executable",
-		"targetName": "game",
-		"libs": ["raylib"],
-		"lflags-posix": ["-L."],
-		"lflags-osx": ["-rpath", "@executable_path/"],
-		"lflags-linux": ["-rpath=$$ORIGIN"],
-		"lflags-windows": ["/LIBPATH:windows", "/LIBPATH:."]
-	},
+		{
+			"name": "default",
+			"targetType": "executable",
+			"targetName": "game",
+			"libs": ["raylib"],
+			"lflags-posix": ["-L."],
+			"lflags-osx": ["-rpath", "@executable_path/"],
+			"lflags-linux": ["-rpath=$$ORIGIN"],
+			"lflags-windows": ["/LIBPATH:windows", "/LIBPATH:."]
+		},
 		{
 			"name": "wasm",
 			"targetType": "staticLibrary",
 			"targetName": "game_wasm",
 			"dflags": ["-i", "-betterC", "-checkaction=halt"]
+		},
+		{
+			"name": "android",
+			"targetType": "dynamicLibrary",
+			"targetName": "main",
+			"dependencies": {
+				"raylib-d": "~>6.0.1"
+			},
+			"subConfigurations": {
+				"raylib-d": "library"
+			},
+			"libs-posix": []
 		}
 	]
 }

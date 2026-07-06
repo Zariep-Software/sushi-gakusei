@@ -1,3 +1,9 @@
 [submodule "sushi-gakusei/buildweb"]
 	path = sushi-gakusei/buildweb
 	url = https://github.com/Kapendev/raylib-d-template.git
+[submodule "src/buildweb"]
+	path = src/buildweb
+	url = https://github.com/Kapendev/raylib-d-template.git
+[submodule "src/abuild"]
+	path = src/abuild
+	url = https://github.com/zariep-software/raylib-d-android-template.git

@@ -4,51 +4,19 @@ import raylib;
 import globals;
 import assets;
 import ui;
-import core.stdc.stdio : snprintf;
-
-version (WebAssembly)
-	extern (C) @nogc nothrow void emscripten_run_script(const(char)* script);
-
-version (Windows)
-	import core.sys.windows.windows : ShellExecuteA, SW_SHOWNORMAL;
-
-version (OSX)
-	import core.stdc.stdlib : system;
-
-version (linux)
-	import core.stdc.stdlib : system;
 
 void openUrl(const(char)* url) @nogc nothrow
 {
-	version (WebAssembly)
-	{
-		char[256] script;
-		snprintf(script.ptr, script.length, "window.open('%s', '_blank');", url);
-		emscripten_run_script(script.ptr);
-	}
-	else version (Windows)
-	{
-		ShellExecuteA(null, "open", url, null, null, SW_SHOWNORMAL);
-	}
-	else version (OSX)
-	{
-		char[300] cmd;
-		snprintf(cmd.ptr, cmd.length, "open '%s'", url);
-		system(cmd.ptr);
-	}
-	else version (linux)
-	{
-			char[300] cmd;
-			snprintf(cmd.ptr, cmd.length, "xdg-open '%s' &", url);
-			system(cmd.ptr);
-	}
-	else version (Android)
-	{
-		// TODO: Call a JNI Call to open the URL
-	}
+	OpenURL(url);
 }
 
-private enum CreditsPanel : int { None, Audio, Fonts }
+private enum CreditsPanel : int
+{
+	None,
+	Audio,
+	Fonts
+}
+
 private __gshared CreditsPanel activePanel = CreditsPanel.None;
 
 private immutable(char)* AUDIO_CREDITS =
@@ -69,19 +37,28 @@ bool aboutUpdateDraw() @nogc nothrow
 {
 	bool closed = false;
 
-	DrawRectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, Color(0, 0, 0, 180));
+	float sw = cast(float)GetScreenWidth();
+	float sh = cast(float)GetScreenHeight();
 
-	Rectangle panel = Rectangle(SCREEN_WIDTH * 0.5f - 250, SCREEN_HEIGHT * 0.5f - 187, 500, 374);
+	DrawRectangle(0, 0, cast(int)sw, cast(int)sh, Color(0, 0, 0, 180));
+
+	Rectangle panel = Rectangle(sw * 0.5f - 250, sh * 0.5f - 187, 500, 374);
+
 	DrawRectangleRounded(panel, 0.05f, 8, Color(10, 10, 10, 255));
 	DrawRectangleRoundedLines(panel, 0.05f, 8, Colors.WHITE);
 
 	if (activePanel != CreditsPanel.None)
 	{
-		Rectangle inner = Rectangle(panel.x + 20, panel.y + 20, panel.width - 40, panel.height - 90);
-		const(char)* text = activePanel == CreditsPanel.Audio ? AUDIO_CREDITS : FONTS_CREDITS;
+		Rectangle inner = Rectangle(panel.x + 20, panel.y + 20, panel.width - 40,
+			panel.height - 90);
+
+		const(char)* text =
+			activePanel == CreditsPanel.Audio ? AUDIO_CREDITS : FONTS_CREDITS;
+
 		DrawTextEx(fontFredoka, text, Vector2(inner.x, inner.y), 20, 1.0f, Colors.WHITE);
 
-		if (ui.button(Rectangle(panel.x + panel.width * 0.5f - 60, panel.y + panel.height - 60, 120, 44), "Close", fontFredoka, 22))
+		if (ui.button( Rectangle(panel.x + panel.width * 0.5f - 60, panel.y + panel.height - 60, 120, 44),
+			"Close", fontFredoka, 22))
 		{
 			activePanel = CreditsPanel.None;
 		}
@@ -89,7 +66,9 @@ bool aboutUpdateDraw() @nogc nothrow
 		return closed;
 	}
 
-	float px = panel.x + 20, py = panel.y + 20;
+	float px = panel.x + 20;
+	float py = panel.y + 20;
+
 	ui.drawAspectFit(texLogo, Rectangle(px, py, 64, 64), Colors.WHITE);
 
 	ui.centeredText("v1.1", fontFredoka, 22, px + 140, py + 20, Colors.WHITE);
@@ -108,9 +87,13 @@ bool aboutUpdateDraw() @nogc nothrow
 	if (ui.button(Rectangle(px + 240, by + 54, 220, 44), "Made with Raylib", fontFredoka, 20))
 		openUrl("https://www.raylib.com");
 
-	if (ui.button(Rectangle(panel.x + panel.width * 0.5f - 60, panel.y + panel.height - 55, 120, 40), "Close", fontFredoka, 22)
+	if (ui.button(
+		Rectangle(panel.x + panel.width * 0.5f - 60, panel.y + panel.height - 55, 120, 40),
+		"Close", fontFredoka, 22)
 		|| IsKeyPressed(KeyboardKey.KEY_ESCAPE))
+	{
 		closed = true;
+	}
 
 	return closed;
 }

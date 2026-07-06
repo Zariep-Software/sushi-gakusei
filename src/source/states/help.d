@@ -29,14 +29,20 @@ bool helpUpdateDraw() @nogc nothrow
 		teacherPicked = true;
 	}
 
-	DrawRectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, Color(20, 20, 20, 255));
+	float sw = cast(float)GetScreenWidth();
+	float sh = cast(float)GetScreenHeight();
 
-	float imgW = SCREEN_WIDTH * 0.35f;
+	DrawRectangle(0, 0, cast(int)sw, cast(int)sh, Color(20, 20, 20, 255));
+
+	float imgW = sw * 0.35f;
 	Texture2D teacher = teacherIndex == 0 ? assets.texTeacher[0] : assets.texTeacher[1];
+
 	DrawTexturePro(teacher,
 		Rectangle(0, 0, cast(float) teacher.width, cast(float) teacher.height),
-		Rectangle(SCREEN_WIDTH - imgW, 0, imgW, SCREEN_HEIGHT),
-		Vector2(0, 0), 0.0f, Colors.WHITE);
+		Rectangle(sw - imgW, 0, imgW, sh),
+		Vector2(0, 0),
+		0.0f,
+		Colors.WHITE);
 
 	float wheel = GetMouseWheelMove();
 	scrollY -= wheel * 30;
@@ -44,15 +50,18 @@ bool helpUpdateDraw() @nogc nothrow
 	if (IsKeyDown(KeyboardKey.KEY_UP)) scrollY -= 6;
 	if (scrollY < 0) scrollY = 0;
 
-	Rectangle clip = Rectangle(40, 40, SCREEN_WIDTH - imgW - 80, SCREEN_HEIGHT - 120);
+	Rectangle clip = Rectangle(40, 40, sw - imgW - 80, sh - 120);
 	BeginScissorMode(cast(int) clip.x, cast(int) clip.y, cast(int) clip.width, cast(int) clip.height);
 	DrawTextEx(fontFredoka, HELP_TEXT, Vector2(clip.x, clip.y - scrollY), 32, 1.0f, Colors.WHITE);
+
 	EndScissorMode();
 
 	bool back = false;
-	if (ui.button(Rectangle(40, SCREEN_HEIGHT - 64, 160, 48), "Back", fontFredoka, 22)
+	if (ui.button(Rectangle(40, sh - 64, 160, 48), "Back", fontFredoka, 22)
 		|| IsKeyPressed(KeyboardKey.KEY_ESCAPE))
+	{
 		back = true;
+	}
 
 	return back;
 }

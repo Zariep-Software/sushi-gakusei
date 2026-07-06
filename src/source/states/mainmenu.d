@@ -4,6 +4,7 @@ import raylib;
 import globals;
 import assets;
 import ui;
+import layout;
 
 __gshared bool inModeSelect = false;
 __gshared int selectedIdx = 0;
@@ -31,18 +32,21 @@ MenuAction mainMenuUpdateDraw() @nogc nothrow
 {
 	MenuAction result = MenuAction.None;
 
-	ui.drawAspectCover(texBackgroundFull, Rectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT), Colors.WHITE);
+	float sw = cast(float)GetScreenWidth();
+	float sh = cast(float)GetScreenHeight();
 
-	Rectangle logoBounds = Rectangle(60, SCREEN_HEIGHT * 0.5f - 256, 512, 512);
+	ui.drawAspectCover(texBackgroundFull, Rectangle(0, 0, sw, sh), Colors.WHITE);
+
+	Rectangle logoBounds = Rectangle(60, sh * 0.5f - 256, 512, 512);
 	ui.drawAspectFit(texLogo, logoBounds, Colors.WHITE);
 
-	Rectangle infoRect = Rectangle(20, SCREEN_HEIGHT - 84, 64, 64);
+	Rectangle infoRect = Rectangle(20, sh - 84, 64, 64);
 	if (ui.iconButton(infoRect, texUiInformation, false))
 		result = MenuAction.OpenAbout;
 
 	float btnW = 340, btnH = 72, gap = 18;
-	float x = SCREEN_WIDTH - btnW - 130;
-	float startY = SCREEN_HEIGHT * 0.5f;
+	float x = sw - btnW - 130;
+	float startY = sh * 0.5f;
 
 	int maxItems = inModeSelect ? 5 : 4;
 
@@ -68,6 +72,7 @@ MenuAction mainMenuUpdateDraw() @nogc nothrow
 			inModeSelect = true;
 			selectedIdx = 0;
 			enterPressed = false;
+			layoutForceTriggerRefresh();
 		}
 
 		if (ui.spriteButton(Rectangle(x, startY + 1 * (btnH + gap), btnW, btnH), "Settings", fontPotta, 30, selectedIdx == 1) || (enterPressed && selectedIdx == 1))
@@ -87,7 +92,7 @@ MenuAction mainMenuUpdateDraw() @nogc nothrow
 	{
 		startY -= (btnH * 5 + gap * 4) * 0.5f;
 
-		centeredText("Choose a Mode", fontFredoka, 48, x + btnW * 0.5f, startY - 70, Colors.WHITE);
+		ui.centeredText("Choose a Mode", fontFredoka, 48, x + btnW * 0.5f, startY - 70, Colors.WHITE);
 
 		if (ui.spriteButton(Rectangle(x, startY + 0 * (btnH + gap), btnW, btnH), "5 Orders", fontPotta, 30, selectedIdx == 0) || (enterPressed && selectedIdx == 0))
 			result = MenuAction.StartOrder5;
@@ -105,8 +110,13 @@ MenuAction mainMenuUpdateDraw() @nogc nothrow
 		{
 			inModeSelect = false;
 			selectedIdx = 0;
+			layoutForceTriggerRefresh();
 		}
 	}
 
+	if (result != MenuAction.None)
+	{
+		layoutForceTriggerRefresh();
+	}
 	return result;
 }

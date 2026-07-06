@@ -1,6 +1,8 @@
 .nomedia
 
 src/game
+*.so
+*.a
 *.html
 *.data
 *.js
@@ -8,6 +10,16 @@ src/game
 *.a
 *.dat
 *.cfg
+
+.gradle
+src/android/.gradle/
+src/android/gradle/
+src/android/build/
+src/android/app/build/
+src/android/local.properties
+src/android/GeneratedPluginRegistrant.java
+src/android/app/src/main/assets
+src/envvars.sh
 
 .import/
 export.cfg

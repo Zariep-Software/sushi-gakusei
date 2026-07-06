@@ -7,42 +7,51 @@ __gshared RenderTexture2D target;
 __gshared Rectangle destRect;
 __gshared bool ready = false;
 
+private __gshared int lastAllocatedW = 0;
+private __gshared int lastAllocatedH = 0;
+
 void layoutInit() @nogc nothrow
 {
-	target = LoadRenderTexture(SCREEN_WIDTH, SCREEN_HEIGHT);
-	SetTextureFilter(target.texture, TextureFilter.TEXTURE_FILTER_BILINEAR);
 	recompute();
-	ready = true;
 }
 
 void layoutShutdown() @nogc nothrow
 {
-	UnloadRenderTexture(target);
+	if (ready)
+	{
+		UnloadRenderTexture(target);
+	}
 }
 
-void layoutRefreshIfNeeded() @nogc nothrow
+// Manually trigger a UI/Viewport scale calculation on discrete events
+void layoutForceTriggerRefresh() @nogc nothrow
 {
-	if (!ready || IsWindowResized())
-	{
-		recompute();
-	}
+	recompute();
 }
 
 private void recompute() @nogc nothrow
 {
-	float sw = cast(float) GetScreenWidth();
-	float sh = cast(float) GetScreenHeight();
-	float scale = sw / SCREEN_WIDTH < sh / SCREEN_HEIGHT ? sw / SCREEN_WIDTH : sh / SCREEN_HEIGHT;
+	int sw = GetScreenWidth();
+	int sh = GetScreenHeight();
 
-	float w = SCREEN_WIDTH * scale;
-	float h = SCREEN_HEIGHT * scale;
-	destRect = Rectangle((sw - w) * 0.5f, (sh - h) * 0.5f, w, h);
+	// Avoid recreating the render texture if dimensions haven't changed
+	if (!ready || sw != lastAllocatedW || sh != lastAllocatedH)
+	{
+		if (ready) UnloadRenderTexture(target);
+
+		target = LoadRenderTexture(sw, sh);
+		SetTextureFilter(target.texture, TextureFilter.TEXTURE_FILTER_BILINEAR);
+
+		lastAllocatedW = sw;
+		lastAllocatedH = sh;
+	}
+
+	destRect = Rectangle(0, 0, cast(float)sw, cast(float)sh);
 	ready = true;
 }
 
 void layoutBeginFrame() @nogc nothrow
 {
-	layoutRefreshIfNeeded();
 	BeginTextureMode(target);
 }
 
@@ -50,17 +59,13 @@ void layoutEndFrame() @nogc nothrow
 {
 	EndTextureMode();
 	ClearBackground(Colors.BLACK);
-	Rectangle src = Rectangle(0, 0, SCREEN_WIDTH, -SCREEN_HEIGHT); // flip Y
+
+	Rectangle src = Rectangle(0, 0, cast(float)lastAllocatedW, -cast(float)lastAllocatedH); // flip Y
 	DrawTexturePro(target.texture, src, destRect, Vector2(0, 0), 0.0f, Colors.WHITE);
 }
 
-// Mouse position mapped from real window space into the fixed virtual spaced
+// Re-calculated 1:1 mouse position
 Vector2 layoutMouse() @nogc nothrow
 {
-	Vector2 m = GetMousePosition();
-	if (destRect.width <= 0 || destRect.height <= 0) return m;
-	return Vector2(
-		(m.x - destRect.x) * (SCREEN_WIDTH / destRect.width),
-		(m.y - destRect.y) * (SCREEN_HEIGHT / destRect.height)
-	);
+	return GetMousePosition();
 }

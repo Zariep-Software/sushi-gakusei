@@ -18,11 +18,14 @@ PauseAction pauseUpdateDraw() @nogc nothrow
 {
 	PauseAction result = PauseAction.None;
 
-	DrawRectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, Color(40, 40, 40, 220));
+	float sw = cast(float)GetScreenWidth();
+	float sh = cast(float)GetScreenHeight();
+
+	DrawRectangle(0, 0, cast(int)sw, cast(int)sh, Color(40, 40, 40, 220));
 
 	float w = 300, h = 300;
-	float x = SCREEN_WIDTH * 0.5f - w * 0.5f;
-	float y = SCREEN_HEIGHT * 0.5f - h * 0.5f;
+	float x = sw * 0.5f - w * 0.5f;
+	float y = sh * 0.5f - h * 0.5f;
 
 	int maxItems = 4;
 

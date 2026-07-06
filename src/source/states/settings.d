@@ -16,11 +16,11 @@ import core.stdc.stdio : snprintf;
 */
 
 private struct Res { int w; int h; }
-private immutable Res[11] COMMON_RES =
+private immutable Res[12] COMMON_RES =
 [
 	Res(640, 360), Res(768, 480), Res(854, 480), Res(1280, 720), Res(1280, 800),
-	Res(1366, 768), Res(1440, 900), Res(1600, 900), Res(1920, 1080),
-	Res(2560, 1440), Res(3840, 2160)
+	Res(1024, 600), Res(1366, 768), Res(1440, 900), Res(1600, 900),
+	Res(1920, 1080), Res(2560, 1440), Res(3840, 2160)
 ];
 
 private __gshared int validResolutionCount = 1;
@@ -72,11 +72,17 @@ void settingsInit() @nogc nothrow
 	{
 		version (WebAssembly)
 		{
+			int canvasW = GetRenderWidth();
+			int canvasH = GetRenderHeight();
+
 			int fallback = 0;
+
 			foreach (i, res; COMMON_RES[0 .. validResolutionCount])
 			{
-				if (res.w == 854 && res.h == 480) { fallback = cast(int) i; break; }
+				if (res.w <= canvasW && res.h <= canvasH)
+					fallback = cast(int)i;
 			}
+
 			current.resolutionIndex = fallback;
 		}
 		else
@@ -160,13 +166,15 @@ private __gshared int selectedResolutionIndex = 0;
 bool settingsUpdateDraw() @nogc nothrow
 {
 	bool close = false;
+	float sw = cast(float)GetScreenWidth();
+	float sh = cast(float)GetScreenHeight();
 
-	DrawRectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, Color(15, 15, 15, 255));
-	ui.centeredText("Settings", fontFredoka, 44, SCREEN_WIDTH * 0.5f, 30, Colors.WHITE);
+	DrawRectangle(0, 0, cast(int)sw, cast(int)sh, Color(15, 15, 15, 255));
+	ui.centeredText("Settings", fontFredoka, 44, sw * 0.5f, 30, Colors.WHITE);
 
 	// Center menu
 	float totalContentWidth = 620.0f;
-	float startX = (SCREEN_WIDTH - totalContentWidth) * 0.5f;
+	float startX = (sw - totalContentWidth) * 0.5f;
 
 	float colX = startX;
 	float col2X = startX + 380.0f;
@@ -174,24 +182,33 @@ bool settingsUpdateDraw() @nogc nothrow
 	// Video
 	float y = 120;
 
-	ui.centeredText("Video", fontFredoka, 28, colX + 120, y, Colors.WHITE);
-	y += 50;
-
-	version (WebAssembly) {}
+	version (Android) {}
 	else
 	{
+		ui.centeredText("Video", fontFredoka, 28, colX + 120, y, Colors.WHITE);
+		y += 50;
+	}
+
+	version (WebAssembly) {}
+	else version (Android) {}
+	else
+	{
+		// Draw layout
 		drawResolutionSelector(colX, y);
 		y += 130;
 	}
 
-	if (ui.button(Rectangle(colX, y, 240, 40), "Toggle Fullscreen", fontFredoka, 18))
+	version (Android) {}
+	else
 	{
-		current.fullscreen = !current.fullscreen;
-		ToggleFullscreen();
-		saveSettings(current);
+		if (ui.button(Rectangle(colX, y, 240, 40), "Toggle Fullscreen", fontFredoka, 18))
+		{
+			current.fullscreen = !current.fullscreen;
+			ToggleFullscreen();
+			saveSettings(current);
+		}
+		y += 70;
 	}
-
-	y += 70;
 
 	// Audio
 	ui.centeredText("Audio", fontFredoka, 28, colX + 120, y, Colors.WHITE);

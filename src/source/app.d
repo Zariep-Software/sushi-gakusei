@@ -56,9 +56,18 @@ void setRandomWindowIcon() @nogc nothrow
 
 void ready() @nogc nothrow
 {
-	SetConfigFlags(ConfigFlags.FLAG_VSYNC_HINT);
-	InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Sushi Gakusei");
-	setRandomWindowIcon();
+	SetConfigFlags(ConfigFlags.FLAG_VSYNC_HINT | ConfigFlags.FLAG_WINDOW_RESIZABLE); // Make sure resizable flag is on
+
+	version(Android)
+	{
+		InitWindow(0, 0, "Sushi Gakusei");
+	}
+	else
+	{
+		InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Sushi Gakusei");
+		setRandomWindowIcon();
+	}
+
 	InitAudioDevice();
 	SetExitKey(KeyboardKey.KEY_NULL);
 
@@ -78,6 +87,12 @@ void ready() @nogc nothrow
 			frame();
 		}
 		shutdown();
+		version (Android)
+		{
+			// prevents bug where app closes if not fully closed
+			import core.stdc.stdlib : exit;
+			exit(0);
+		}
 	}
 }
 
@@ -130,7 +145,10 @@ extern (C) void frame() @nogc nothrow
 	if (showAbout)
 	{
 		if (about.aboutUpdateDraw())
+		{
 			showAbout = false;
+			layoutForceTriggerRefresh();
+		}
 	}
 
 	layoutEndFrame();
@@ -160,13 +178,16 @@ private void updateDrawMainMenu() @nogc nothrow
 		case mainmenu.MenuAction.OpenSettings:
 			settingsState.origin = SettingsOrigin.MainMenu;
 			currentState = AppState.Settings;
+			layoutForceTriggerRefresh();
 			break;
 		case mainmenu.MenuAction.OpenHelp:
 			help.helpReset();
 			currentState = AppState.Help;
+			layoutForceTriggerRefresh();
 			break;
 		case mainmenu.MenuAction.OpenAbout:
 			showAbout = true;
+			layoutForceTriggerRefresh();
 			break;
 		case mainmenu.MenuAction.Quit:
 			wantQuit = true;
@@ -191,13 +212,14 @@ private void beginGame(int amount) @nogc nothrow
 	mainmenu.mainMenuReset();
 	gameState.gameInit(amount);
 	currentState = AppState.Game;
+	layoutForceTriggerRefresh();
 }
 
 private void backToMainMenu() @nogc nothrow
 {
 	mainmenu.mainMenuReset();
-	layoutRefreshIfNeeded();
 	currentState = AppState.MainMenu;
+	layoutForceTriggerRefresh();
 }
 
 private void updateDrawHelp() @nogc nothrow
@@ -214,14 +236,14 @@ private void updateDrawSettingsStandalone() @nogc nothrow
 	{
 		final switch (settingsState.origin)
 		{
-			case SettingsOrigin.MainMenu:
-				backToMainMenu();
-				break;
-			case SettingsOrigin.PauseMenu:
-				currentState = AppState.Game;
-				layoutRefreshIfNeeded();
-				showPause = true;
-				break;
+		case SettingsOrigin.MainMenu:
+			backToMainMenu();
+			break;
+		case SettingsOrigin.PauseMenu:
+			currentState = AppState.Game;
+			showPause = true;
+			layoutForceTriggerRefresh();
+			break;
 		}
 	}
 }
@@ -236,24 +258,26 @@ private void updateDrawGame(float dt) @nogc nothrow
 		auto action = pauseState.pauseUpdateDraw();
 		final switch (action)
 		{
-			case pauseState.PauseAction.None:
-				break;
-			case pauseState.PauseAction.Resume:
-				showPause = false;
-				break;
-			case pauseState.PauseAction.EndSession:
-				showPause = false;
-				finishGameToGameOver();
-				break;
-			case pauseState.PauseAction.Settings:
-				settingsState.origin = SettingsOrigin.PauseMenu;
-				showPause = false;
-				currentState = AppState.Settings;
-				break;
-			case pauseState.PauseAction.MainMenu:
-				showPause = false;
-				backToMainMenu();
-				break;
+		case pauseState.PauseAction.None:
+			break;
+		case pauseState.PauseAction.Resume:
+			showPause = false;
+			layoutForceTriggerRefresh();
+			break;
+		case pauseState.PauseAction.EndSession:
+			showPause = false;
+			finishGameToGameOver();
+			break;
+		case pauseState.PauseAction.Settings:
+			settingsState.origin = SettingsOrigin.PauseMenu;
+			showPause = false;
+			currentState = AppState.Settings;
+			layoutForceTriggerRefresh();
+			break;
+		case pauseState.PauseAction.MainMenu:
+			showPause = false;
+			backToMainMenu();
+			break;
 		}
 		return;
 	}
@@ -263,8 +287,8 @@ private void updateDrawGame(float dt) @nogc nothrow
 
 	if (gameState.consumePauseRequested())
 	{
-		layoutRefreshIfNeeded();
 		showPause = true;
+		layoutForceTriggerRefresh();
 	}
 
 	if (gameState.consumeGameOverRequested())
@@ -276,6 +300,7 @@ private void finishGameToGameOver() @nogc nothrow
 	int errors = gameState.maxLives - gameState.lives;
 	gameOver.gameOverSetup(gameState.ordersCompleted, errors, gameState.orderAmount == -1);
 	currentState = AppState.GameOver;
+	layoutForceTriggerRefresh();
 }
 
 private void updateDrawGameOver() @nogc nothrow
